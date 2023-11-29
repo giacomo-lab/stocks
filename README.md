@@ -1,0 +1,1 @@
+Track stock price,  evalute fondamentals, and backtest trading strategies
