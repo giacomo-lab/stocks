@@ -1,0 +1,19 @@
+{
+    "tickers": ["AAPL", "MSFT", "GOOGL"],
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-27",
+    "interval": "5m",
+    "initial_capital": 100000.0,
+    "commission_per_share": 0.005,
+    "commission_min": 1.0,
+    "slippage_pct": 0.001,
+    "output_dir": "output",
+    "strategy": {
+        "name": "SMACrossoverTakeProfit",
+        "params": {
+            "short_window": 20,
+            "long_window": 100,
+            "profit_target_pct": 1.0
+        }
+    }
+}

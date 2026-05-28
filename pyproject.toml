@@ -1,0 +1,14 @@
+[project]
+name = "stocks"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.6.0",
+    "numpy>=1.23.0",
+    "pandas>=1.5.0",
+    "pyarrow>=24.0.0",
+    "requests>=2.28.0",
+    "yfinance>=0.2.0",
+]
