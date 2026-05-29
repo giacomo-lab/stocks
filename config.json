@@ -1,5 +1,5 @@
 {
-    "tickers": ["AAPL", "AMZN", "META", "MSFT"],
+    "tickers": ["AAPL", "AMZN", "META", "MSFT", "TSLA", "SPY", "QQQ", "DIA", "EEM", "VXX", "SPX", "DJI", "NDX", "RUT", "VIX"],
     "start_date": "2022-09-01",
     "end_date": "2023-09-29",
     "interval": "1m",
@@ -11,15 +11,15 @@
     "slippage_pct": 0.001,
     "output_dir": "output",
     "strategy": {
-        "name": "MeanReversionZScore",
+        "name": "MeanReversionPct",
         "params": {
             "lookback_window": 120,
             "trend_window": 720,
-            "entry_z_score": -2.0,
-            "exit_z_score": 0.0,
+            "entry_pct": -2.0,
             "max_downward_trend_pct": -1.0,
-            "profit_target_pct": 0.5,
-            "stop_loss_pct": 0.75
+            "volatility_window": 120,
+            "profit_vol_fraction": 2.0,
+            "stop_vol_fraction": 2.0
         }
     }
 }

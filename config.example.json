@@ -18,8 +18,9 @@
             "entry_z_score": -2.0,
             "exit_z_score": 0.0,
             "max_downward_trend_pct": 1.0,
-            "profit_target_pct": 1.0,
-            "stop_loss_pct": 2.0
+            "volatility_window": 20,
+            "profit_vol_fraction": 1.5,
+            "stop_vol_fraction": 1.0
         }
     }
 }
