@@ -1,6 +1,8 @@
 import sys
 import os
 
+from dotenv import load_dotenv
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.config import BacktestConfig
@@ -18,17 +20,24 @@ STRATEGY_MAP = {
 
 
 def main():
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config.json")
-    config = BacktestConfig.from_json(config_path)
+    project_root = os.path.join(os.path.dirname(__file__), "..")
+    load_dotenv(os.path.join(project_root, ".env"))
+
+    config = BacktestConfig.load()
 
     print(f"Fetching data for {len(config.tickers)} tickers: {config.tickers}")
-    print(f"Period: {config.start_date} to {config.end_date} (Interval: {config.interval})\n")
+    print(
+        f"Period: {config.start_date} to {config.end_date} "
+        f"(Interval: {config.interval}, Provider: {config.data_provider})\n"
+    )
 
     data = fetch_ohlcv(
         tickers=config.tickers,
         start=config.start_date,
         end=config.end_date,
         interval=config.interval,
+        provider=config.data_provider,
+        data_dir=config.data_dir,
     )
 
     if not data:

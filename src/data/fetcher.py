@@ -1,8 +1,12 @@
 import os
-from datetime import datetime
 
 import pandas as pd
 import yfinance as yf
+
+from src.data import alphavantage, local_files, stockdata
+from src.data import alpaca as alpaca_data
+
+VALID_PROVIDERS = ("yfinance", "alphavantage", "stockdata", "alpaca", "local")
 
 
 def fetch_ohlcv(
@@ -11,9 +15,20 @@ def fetch_ohlcv(
     end: str,
     interval: str = "1d",
     cache_dir: str = ".cache",
+    provider: str = "yfinance",
+    data_dir: str | None = None,
 ) -> dict[str, pd.DataFrame]:
     if not isinstance(tickers, list) or len(tickers) == 0:
         raise ValueError("tickers must be a non-empty list")
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(
+            f"Unknown provider '{provider}'. Choose from: {', '.join(VALID_PROVIDERS)}"
+        )
+    if provider == "alphavantage" and interval != "1d":
+        raise ValueError(
+            "Alpha Vantage free tier supports daily (1d) only. "
+            "Use data_provider: yfinance for intraday, or upgrade Alpha Vantage."
+        )
 
     os.makedirs(cache_dir, exist_ok=True)
 
@@ -27,7 +42,7 @@ def fetch_ohlcv(
             result[ticker] = pd.read_parquet(path)
             continue
 
-        df = _download(ticker, start, end, interval)
+        df = _download(ticker, start, end, interval, provider, data_dir)
         if df is not None and not df.empty:
             df.to_parquet(path)
             result[ticker] = df
@@ -36,6 +51,25 @@ def fetch_ohlcv(
 
 
 def _download(
+    ticker: str,
+    start: str,
+    end: str,
+    interval: str,
+    provider: str,
+    data_dir: str | None = None,
+) -> pd.DataFrame | None:
+    if provider == "alphavantage":
+        return _download_alphavantage(ticker, start, end)
+    if provider == "stockdata":
+        return _download_stockdata(ticker, start, end, interval)
+    if provider == "alpaca":
+        return _download_alpaca(ticker, start, end, interval)
+    if provider == "local":
+        return _download_local(ticker, start, end, interval, data_dir)
+    return _download_yfinance(ticker, start, end, interval)
+
+
+def _download_yfinance(
     ticker: str, start: str, end: str, interval: str
 ) -> pd.DataFrame | None:
     try:
@@ -65,6 +99,91 @@ def _download(
         if col in data.columns:
             data["returns"] = data[col].pct_change()
             break
+
+    return data
+
+
+def _download_alphavantage(
+    ticker: str, start: str, end: str
+) -> pd.DataFrame | None:
+    try:
+        data = alphavantage.fetch_daily(ticker)
+    except Exception as e:
+        print(f"[WARN] Failed to download {ticker} from Alpha Vantage: {e}")
+        return None
+
+    if data.empty:
+        print(f"[WARN] No data for {ticker}")
+        return None
+
+    # Filter to requested date range (compact returns ~100 most recent bars)
+    start_ts = pd.Timestamp(start)
+    end_ts = pd.Timestamp(end)
+    data = data.loc[(data.index >= start_ts) & (data.index <= end_ts)]
+
+    if data.empty:
+        print(
+            f"[WARN] No data for {ticker} in range {start} to {end} "
+            "(Alpha Vantage free tier returns ~100 recent daily bars)"
+        )
+        return None
+
+    return data
+
+
+def _download_stockdata(
+    ticker: str, start: str, end: str, interval: str
+) -> pd.DataFrame | None:
+    try:
+        data = stockdata.fetch_ohlcv_range(ticker, start, end, interval)
+    except Exception as e:
+        print(f"[WARN] Failed to download {ticker} from StockData.org: {e}")
+        return None
+
+    if data.empty:
+        print(f"[WARN] No data for {ticker} in range {start} to {end}")
+        return None
+
+    return data
+
+
+def _download_alpaca(
+    ticker: str, start: str, end: str, interval: str
+) -> pd.DataFrame | None:
+    try:
+        data = alpaca_data.fetch_bars_range(ticker, start, end, interval)
+    except ValueError as e:
+        # Unsupported interval — re-raise so caller gets a clear message
+        raise
+    except Exception as e:
+        print(f"[WARN] Failed to download {ticker} from Alpaca: {e}")
+        return None
+
+    if data.empty:
+        print(f"[WARN] No data for {ticker} in range {start} to {end}")
+        return None
+
+    return data
+
+
+def _download_local(
+    ticker: str,
+    start: str,
+    end: str,
+    interval: str,
+    data_dir: str | None,
+) -> pd.DataFrame | None:
+    try:
+        data = local_files.load_ohlcv(ticker, start, end, interval, data_dir)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"[WARN] {e}")
+        return None
+    except Exception as e:
+        print(f"[WARN] Failed to load {ticker} from local files: {e}")
+        return None
+
+    if data.empty:
+        return None
 
     return data
 
