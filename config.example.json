@@ -11,11 +11,14 @@
     "slippage_pct": 0.001,
     "output_dir": "output",
     "strategy": {
-        "name": "SMACrossoverTakeProfit",
+        "name": "MeanReversionZScore",
         "params": {
-            "short_window": 50,
-            "long_window": 200,
-            "profit_target_pct": 1.0
+            "lookback_window": 50,
+            "entry_z_score": -2.0,
+            "exit_z_score": 0.0,
+            "max_downward_trend_pct": 1.0,
+            "profit_target_pct": 1.0,
+            "stop_loss_pct": 2.0
         }
     }
 }

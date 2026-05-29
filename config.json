@@ -1,20 +1,24 @@
 {
-    "tickers": ["AAPL", "AMZN", "DIA", "DJI", "EEM", "META", "MSFT"],
+    "tickers": ["AAPL", "MSFT"],
     "start_date": "2022-09-01",
     "end_date": "2023-09-29",
-    "interval": "15m",
+    "interval": "1m",
     "data_provider": "local",
+    "data_dir": "data",
     "initial_capital": 100000.0,
     "commission_per_share": 0.005,
     "commission_min": 1.0,
-    "slippage_pct": 0.01,
+    "slippage_pct": 0.001,
     "output_dir": "output",
     "strategy": {
-        "name": "SMACrossoverTakeProfit",
+        "name": "MeanReversionZScore",
         "params": {
-            "short_window": 50,
-            "long_window": 200,
-            "profit_target_pct": 1.0
+            "lookback_window": 25,
+            "entry_z_score": -2.0,
+            "exit_z_score": 0.0,
+            "max_downward_trend_pct": 0,
+            "profit_target_pct": 1.0,
+            "stop_loss_pct": 1.0
         }
     }
 }

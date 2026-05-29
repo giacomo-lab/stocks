@@ -9,6 +9,11 @@ from src.config import BacktestConfig
 from src.data.fetcher import align_data, fetch_ohlcv
 from src.strategies.sma_crossover import SMACrossover
 from src.strategies.sma_crossover_tp import SMACrossoverTakeProfit
+from src.strategies.mean_reversion import (
+    MeanReversionPct,
+    MeanReversionRSI,
+    MeanReversionZScore,
+)
 from src.backtest.engine import BacktestEngine
 from src.backtest.metrics import compute_metrics, print_metrics
 
@@ -16,6 +21,9 @@ from src.backtest.metrics import compute_metrics, print_metrics
 STRATEGY_MAP = {
     "SMACrossover": SMACrossover,
     "SMACrossoverTakeProfit": SMACrossoverTakeProfit,
+    "MeanReversionZScore": MeanReversionZScore,
+    "MeanReversionPct": MeanReversionPct,
+    "MeanReversionRSI": MeanReversionRSI,
 }
 
 

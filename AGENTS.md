@@ -8,3 +8,4 @@ follow the these rules when implemnting changes:
 - when implementing/updateing a new stratey add a short description of it.
 - add short but useful comments to exapoin what the code does.
 - all values that the user have/can set jave to go into the config.json
+- after making changes to the codebase make sure the docs are updated (example: README.md)
