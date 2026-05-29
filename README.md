@@ -62,9 +62,9 @@ Set `strategy.name` and `strategy.params` in `config.json`. Available strategies
 |------|-------------|------------|
 | `SMACrossover` | Golden/death cross on two SMAs | `short_window`, `long_window` |
 | `SMACrossoverTakeProfit` | SMA crossover + profit target exit | `short_window`, `long_window`, `profit_target_pct` |
-| `MeanReversionZScore` | Oversold z-score + flat/up trend; sell on reversion / TP / SL | `lookback_window`, `entry_z_score`, `exit_z_score`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
-| `MeanReversionPct` | Price % below SMA + flat/up trend; sell on SMA / TP / SL | `lookback_window`, `entry_pct`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
-| `MeanReversionRSI` | Oversold RSI + flat/up trend over `rsi_period`; sell on RSI / TP / SL | `rsi_period`, `entry_rsi`, `exit_rsi`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
+| `MeanReversionZScore` | Oversold z-score + flat/up trend; sell on reversion / TP / SL | `lookback_window`, `trend_window`, `entry_z_score`, `exit_z_score`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
+| `MeanReversionPct` | Price % below SMA + flat/up trend; sell on SMA / TP / SL | `lookback_window`, `trend_window`, `entry_pct`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
+| `MeanReversionRSI` | Oversold RSI + flat/up trend; sell on RSI / TP / SL | `rsi_period`, `trend_window`, `entry_rsi`, `exit_rsi`, `max_downward_trend_pct`, `profit_target_pct` (optional), `stop_loss_pct` (optional) |
 
 **Mean reversion (z-score)** — good default for intraday bars:
 
@@ -73,6 +73,7 @@ Set `strategy.name` and `strategy.params` in `config.json`. Available strategies
   "name": "MeanReversionZScore",
   "params": {
     "lookback_window": 50,
+    "trend_window": 100,
     "entry_z_score": -2.0,
     "exit_z_score": 0.0,
     "max_downward_trend_pct": 1.0,
@@ -82,7 +83,7 @@ Set `strategy.name` and `strategy.params` in `config.json`. Available strategies
 }
 ```
 
-`max_downward_trend_pct` controls trend flatness: entry is allowed when lookback return is ≥ `-max_downward_trend_pct` (flat or up). Omit `profit_target_pct` to disable take-profit.
+`lookback_window` drives the z-score/SMA indicator; `trend_window` drives the trend filter (defaults to `lookback_window` if omitted). `max_downward_trend_pct` controls trend flatness: entry is allowed when trend return is ≥ `-max_downward_trend_pct` (flat or up). Omit `profit_target_pct` to disable take-profit.
 
 **Mean reversion (percent deviation):**
 
@@ -91,6 +92,7 @@ Set `strategy.name` and `strategy.params` in `config.json`. Available strategies
   "name": "MeanReversionPct",
   "params": {
     "lookback_window": 50,
+    "trend_window": 100,
     "entry_pct": -2.0,
     "max_downward_trend_pct": 1.0,
     "profit_target_pct": 1.0,
@@ -106,6 +108,7 @@ Set `strategy.name` and `strategy.params` in `config.json`. Available strategies
   "name": "MeanReversionRSI",
   "params": {
     "rsi_period": 14,
+    "trend_window": 50,
     "entry_rsi": 30,
     "exit_rsi": 50,
     "max_downward_trend_pct": 1.0,

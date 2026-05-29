@@ -55,6 +55,14 @@ def _trend_allows_entry(trend_pct: float, max_downward_trend_pct: float) -> bool
     return trend_pct >= -max_downward_trend_pct
 
 
+def _min_history_bars(
+    indicator_window: int, trend_window: int, *, rsi: bool = False
+) -> int:
+    """Bars required before indicator and trend are both valid."""
+    indicator_need = indicator_window + 1 if rsi else indicator_window
+    return max(indicator_need, trend_window)
+
+
 def _stop_loss_hit(
     price: float, entry: float, stop_loss_pct: float | None
 ) -> bool:
@@ -104,22 +112,25 @@ class MeanReversionZScore(Strategy):
 
     description = (
         "Regression to the mean (z-score) – buys when price is unusually far "
-        "below the rolling mean (oversold) only if the lookback trend is flat "
-        "or upward; sells on reversion, optional take-profit, or stop-loss."
+        "below the rolling mean (lookback_window) only if trend_window trend "
+        "is flat or upward; sells on reversion, optional take-profit, or stop-loss."
     )
 
     def __init__(
         self,
         lookback_window: int = 50,
+        trend_window: int | None = None,
         entry_z_score: float = -2.0,
         exit_z_score: float = 0.0,
         max_downward_trend_pct: float = 1.0,
         profit_target_pct: float | None = None,
         stop_loss_pct: float | None = None,
     ):
+        resolved_trend = trend_window if trend_window is not None else lookback_window
         super().__init__(
             params={
                 "lookback_window": lookback_window,
+                "trend_window": resolved_trend,
                 "entry_z_score": entry_z_score,
                 "exit_z_score": exit_z_score,
                 "max_downward_trend_pct": max_downward_trend_pct,
@@ -128,6 +139,7 @@ class MeanReversionZScore(Strategy):
             }
         )
         self.lookback_window = lookback_window
+        self.trend_window = resolved_trend
         self.entry_z_score = entry_z_score
         self.exit_z_score = exit_z_score
         self.max_downward_trend_pct = max_downward_trend_pct
@@ -158,7 +170,9 @@ class MeanReversionZScore(Strategy):
             self._price_history[ticker].append(price)
 
             prices = self._price_history[ticker]
-            if len(prices) < self.lookback_window:
+            if len(prices) < _min_history_bars(
+                self.lookback_window, self.trend_window
+            ):
                 continue
 
             z = _z_score(prices, self.lookback_window)
@@ -184,7 +198,7 @@ class MeanReversionZScore(Strategy):
                     self._entry_price.pop(ticker, None)
                     signals.append(Signal(ticker, "SELL", -1, "MARKET", None))
             elif z < self.entry_z_score:
-                trend = _trend_pct(prices, self.lookback_window)
+                trend = _trend_pct(prices, self.trend_window)
                 if not _trend_allows_entry(trend, self.max_downward_trend_pct):
                     continue
                 self._in_position.add(ticker)
@@ -199,21 +213,24 @@ class MeanReversionPct(Strategy):
 
     description = (
         "Regression to the mean (percent deviation) – buys when price deviates "
-        "entry_pct below a rolling SMA only if the lookback trend is flat or "
-        "upward; sells on SMA reversion, optional take-profit, or stop-loss."
+        "entry_pct below a rolling SMA (lookback_window) only if trend_window "
+        "trend is flat or upward; sells on SMA reversion, take-profit, or stop-loss."
     )
 
     def __init__(
         self,
         lookback_window: int = 50,
+        trend_window: int | None = None,
         entry_pct: float = -2.0,
         max_downward_trend_pct: float = 1.0,
         profit_target_pct: float | None = None,
         stop_loss_pct: float | None = None,
     ):
+        resolved_trend = trend_window if trend_window is not None else lookback_window
         super().__init__(
             params={
                 "lookback_window": lookback_window,
+                "trend_window": resolved_trend,
                 "entry_pct": entry_pct,
                 "max_downward_trend_pct": max_downward_trend_pct,
                 "profit_target_pct": profit_target_pct,
@@ -221,6 +238,7 @@ class MeanReversionPct(Strategy):
             }
         )
         self.lookback_window = lookback_window
+        self.trend_window = resolved_trend
         self.entry_pct = entry_pct
         self.max_downward_trend_pct = max_downward_trend_pct
         self.profit_target_pct = profit_target_pct
@@ -250,7 +268,9 @@ class MeanReversionPct(Strategy):
             self._price_history[ticker].append(price)
 
             prices = self._price_history[ticker]
-            if len(prices) < self.lookback_window:
+            if len(prices) < _min_history_bars(
+                self.lookback_window, self.trend_window
+            ):
                 continue
 
             sma = _rolling_mean(prices, self.lookback_window)
@@ -275,7 +295,7 @@ class MeanReversionPct(Strategy):
                     self._entry_price.pop(ticker, None)
                     signals.append(Signal(ticker, "SELL", -1, "MARKET", None))
             elif price <= entry_threshold:
-                trend = _trend_pct(prices, self.lookback_window)
+                trend = _trend_pct(prices, self.trend_window)
                 if not _trend_allows_entry(trend, self.max_downward_trend_pct):
                     continue
                 self._in_position.add(ticker)
@@ -289,23 +309,26 @@ class MeanReversionRSI(Strategy):
     """Buy on oversold RSI; sell when RSI normalizes."""
 
     description = (
-        "Regression to the mean (RSI) – buys when RSI is oversold only if the "
-        "rsi_period trend is flat or upward; sells on RSI normalization, "
+        "Regression to the mean (RSI) – buys when RSI (rsi_period) is oversold "
+        "only if trend_window trend is flat or upward; sells on RSI normalization, "
         "optional take-profit, or stop-loss."
     )
 
     def __init__(
         self,
         rsi_period: int = 14,
+        trend_window: int | None = None,
         entry_rsi: float = 30.0,
         exit_rsi: float = 50.0,
         max_downward_trend_pct: float = 1.0,
         profit_target_pct: float | None = None,
         stop_loss_pct: float | None = None,
     ):
+        resolved_trend = trend_window if trend_window is not None else rsi_period
         super().__init__(
             params={
                 "rsi_period": rsi_period,
+                "trend_window": resolved_trend,
                 "entry_rsi": entry_rsi,
                 "exit_rsi": exit_rsi,
                 "max_downward_trend_pct": max_downward_trend_pct,
@@ -314,6 +337,7 @@ class MeanReversionRSI(Strategy):
             }
         )
         self.rsi_period = rsi_period
+        self.trend_window = resolved_trend
         self.entry_rsi = entry_rsi
         self.exit_rsi = exit_rsi
         self.max_downward_trend_pct = max_downward_trend_pct
@@ -344,7 +368,9 @@ class MeanReversionRSI(Strategy):
             self._price_history[ticker].append(price)
 
             prices = self._price_history[ticker]
-            if len(prices) < self.rsi_period + 1:
+            if len(prices) < _min_history_bars(
+                self.rsi_period, self.trend_window, rsi=True
+            ):
                 continue
 
             rsi = _rsi(prices, self.rsi_period)
@@ -370,7 +396,7 @@ class MeanReversionRSI(Strategy):
                     self._entry_price.pop(ticker, None)
                     signals.append(Signal(ticker, "SELL", -1, "MARKET", None))
             elif rsi <= self.entry_rsi:
-                trend = _trend_pct(prices, self.rsi_period)
+                trend = _trend_pct(prices, self.trend_window)
                 if not _trend_allows_entry(trend, self.max_downward_trend_pct):
                     continue
                 self._in_position.add(ticker)

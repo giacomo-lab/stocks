@@ -1,5 +1,5 @@
 {
-    "tickers": ["AAPL", "MSFT"],
+    "tickers": ["AAPL", "AMZN", "META", "MSFT"],
     "start_date": "2022-09-01",
     "end_date": "2023-09-29",
     "interval": "1m",
@@ -13,12 +13,13 @@
     "strategy": {
         "name": "MeanReversionZScore",
         "params": {
-            "lookback_window": 25,
+            "lookback_window": 120,
+            "trend_window": 720,
             "entry_z_score": -2.0,
             "exit_z_score": 0.0,
-            "max_downward_trend_pct": 0,
-            "profit_target_pct": 1.0,
-            "stop_loss_pct": 1.0
+            "max_downward_trend_pct": -1.0,
+            "profit_target_pct": 0.5,
+            "stop_loss_pct": 0.75
         }
     }
 }
